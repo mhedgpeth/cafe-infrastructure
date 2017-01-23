@@ -50,14 +50,14 @@ resource "azurerm_storage_blob" "cafe" {
 }
 
 resource "azurerm_public_ip" "cafemaster" {
-  name                         = "${var.stage}cafePublicIp"
+  name                         = "${var.stage}cafeMasterPublicIp"
   location                     = "${var.location}"
   resource_group_name          = "${azurerm_resource_group.cafe.name}"
   public_ip_address_allocation = "static"
 }
 
 resource "azurerm_public_ip" "cafeagent" {
-  name                         = "${var.stage}cafePublicIp"
+  name                         = "${var.stage}cafeAgentPublicIp"
   location                     = "${var.location}"
   resource_group_name          = "${azurerm_resource_group.cafe.name}"
   public_ip_address_allocation = "static"
@@ -101,7 +101,7 @@ resource "azurerm_network_interface" "cafemaster" {
   resource_group_name = "${azurerm_resource_group.cafe.name}"
 
   ip_configuration {
-    name                          = "cafeIPconfiguration1"
+    name                          = "cafeMasterIPconfiguration"
     subnet_id                     = "${azurerm_subnet.cafe.id}"
     private_ip_address_allocation = "dynamic"
     public_ip_address_id          = "${azurerm_public_ip.cafemaster.id}"
@@ -124,7 +124,7 @@ resource "azurerm_virtual_machine" "cafemaster" {
 
   storage_os_disk {
     name          = "${var.stage}-master-osdisk"
-    vhd_uri       = "${azurerm_storage_account.cafe.primary_blob_endpoint}${azurerm_storage_container.cafe.name}/myosdisk1.vhd"
+    vhd_uri       = "${azurerm_storage_account.cafe.primary_blob_endpoint}${azurerm_storage_container.cafe.name}/osdiskmaster.vhd"
     caching       = "ReadWrite"
     create_option = "FromImage"
   }
@@ -139,25 +139,41 @@ resource "azurerm_virtual_machine" "cafemaster" {
     disable_password_authentication = false
   }
 
-  provisioner "chef" {
-    node_name       = "${var.stage}cafemaster"
-    server_url      = "${var.chef_server_url}"
-    run_list        = []
-    policy_name     = "jenkins-master"
-    policy_group    = "qa"
-    use_policyfile  = true
-    recreate_client = true
-    user_name       = "${var.chef_user_name}"
-    user_key        = "${var.chef_user_key_path}"
-    version         = "${var.chef_client_version}"
+  # provisioner "chef" {
 
-    connection {
-      type        = "ssh"
-      user        = "${var.admin_username}"
-      private_key = "${var.ssh_private_key}"
-      host        = "${azurerm_public_ip.cafemaster.ip_address}"
-    }
-  }
+  #   node_name       = "${var.stage}cafemaster"
+
+  #   server_url      = "${var.chef_server_url}"
+
+  #   run_list        = []
+
+  #   policy_name     = "jenkins-master"
+
+  #   policy_group    = "qa"
+
+  #   use_policyfile  = true
+
+  #   recreate_client = true
+
+  #   user_name       = "${var.chef_user_name}"
+
+  #   user_key        = "${var.chef_user_key_path}"
+
+  #   version         = "${var.chef_client_version}"
+
+  #   connection {
+
+  #     type        = "ssh"
+
+  #     user        = "${var.admin_username}"
+
+  #     private_key = "${var.ssh_private_key}"
+
+  #     host        = "${azurerm_public_ip.cafemaster.ip_address}"
+
+  #   }
+
+  # }
 }
 
 resource "azurerm_network_interface" "cafeagent" {
@@ -189,7 +205,7 @@ resource "azurerm_virtual_machine" "cafeagent" {
 
   storage_os_disk {
     name          = "${var.stage}-agent-osdisk"
-    vhd_uri       = "${azurerm_storage_account.cafe.primary_blob_endpoint}${azurerm_storage_container.cafe.name}/myosdisk1.vhd"
+    vhd_uri       = "${azurerm_storage_account.cafe.primary_blob_endpoint}${azurerm_storage_container.cafe.name}/osdiskagent.vhd"
     caching       = "ReadWrite"
     create_option = "FromImage"
   }
